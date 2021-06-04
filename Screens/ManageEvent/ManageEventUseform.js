@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react'
  import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateOldJob } from "../../Redux/Actions/CleanerActions";
-import { useDispatch } from 'react-redux';
+import { useDispatch,useSelector } from 'react-redux';
 export default function ManageEventUseform() {
+ const ReduxEvents = useSelector((state) => state.cleaner.dailyJobs);
+
      const dispatch = useDispatch( )
-     const [eventJob, setEventJob] = useState({
-       carAvailable: false,
-       interior: false,
-       lightsOff: false,
-       returnKeys: false,
-       message: "",
-       imageUrl: "",
-     });
+    
     const [sendToredux,setSendToRedux] = useState(false)
     const putImagetoState = async () => {
       const localParsedPhoto = await AsyncStorage.getItem("localPhoto");
@@ -22,8 +17,31 @@ export default function ManageEventUseform() {
         });
       }
   };
+ 
+  const setUpdatedStateToEvent = async() => {
+    const EventIdLocal = await AsyncStorage.getItem("eventIdlocal");
+    console.log("Id from card in dashboard",EventIdLocal)
+    if (EventIdLocal) {
+      for (let i = 0; i < ReduxEvents.length; i++){
+        if (EventIdLocal === ReduxEvents[i]._id) {
+          console.log("EVENT ID IN REDUX", ReduxEvents[i]._id);
+          setEventJob({
+            serviceStatus: ReduxEvents[i].serviceStatus,
+            interior: ReduxEvents[i].interior,
+            lightsOff: ReduxEvents[i].lightsOff,
+            carAvailable: ReduxEvents[i].carAvailable,
+            message: ReduxEvents[i].message,
+            imageUrl: ReduxEvents[i].imageUrl,
+          });
+        }
+      }
+    }
+  }
   
-  
+  useEffect(() => {
+    setUpdatedStateToEvent()
+    console.log(eventJob,"UPDATED STATE")
+},[])
     useEffect(() => {
       putImagetoState();
     }, [sendUpdateJob]);
@@ -42,7 +60,8 @@ export default function ManageEventUseform() {
             ...eventJob,
             id:eventId
          })
-        setSendToRedux(true)
+      setSendToRedux(true)
+      
 }
 
     return { Car, setCar, eventJob, setEventJob, sendUpdateJob };

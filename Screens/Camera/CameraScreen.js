@@ -5,6 +5,8 @@ import { Camera } from "expo-camera";
 import { Button } from 'react-native-paper';
 import './Camera.styles'
 import { Styles } from './Camera.styles';
+import * as ImageManipulator from "expo-image-manipulator";
+
 export default function CameraScreen({navigation}) {
      const [hasPermission, setHasPermission] = useState(null);
     const [type, setType] = useState(Camera.Constants.Type.back);
@@ -29,10 +31,22 @@ const cameraRef= useRef(null)
       if (cameraRef) {
           let photo = await cameraRef.current.takePictureAsync();
           console.log(photo)
-          if (photo.uri !== undefined) {
-  const jsonPhoto = JSON.stringify(photo);
-              await AsyncStorage.setItem("localPhoto", jsonPhoto);
-              navigation.navigate("manage", { myPhoto: photo });
+        if (photo.uri !== undefined) {
+            console.log("before",photo)
+           
+            const compressedImage = await ImageManipulator.manipulateAsync(
+              photo.uri,
+              [{
+                resize: {
+                  width: photo.width * 0.5,
+                height:photo.height*0.5}
+              }],
+              {compress:0.9,format:ImageManipulator.SaveFormat.JPEG}
+          )
+          await console.log("after",compressedImage)
+          const jsonPhoto = await JSON.stringify(compressedImage);
+          await AsyncStorage.setItem("localPhoto", jsonPhoto);
+          navigation.navigate("manage", { myPhoto: photo });
               
         }
        

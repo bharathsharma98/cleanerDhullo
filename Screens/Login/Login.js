@@ -1,20 +1,22 @@
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import { TextInput, Button } from "react-native-paper";
-import { baseUrl } from "../../Variables/Variables";
+import React, { useState } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { Button, TextInput } from "react-native-paper";
 import { useDispatch } from "react-redux";
-import { addCleaner, addJobs } from "../../Redux/Actions/CleanerActions";
 import logo from "../../assets/logo.png";
+import { addCleaner } from "../../Redux/Actions/CleanerActions";
+import { baseUrl } from "../../Variables/Variables";
+import { EvilIcons } from "@expo/vector-icons";
 export const Login = ({ navigation }) => {
   const [cleanerDetails, setCleanerDetails] = React.useState({
     mobileNo: "",
     password: "",
   });
-  const [error, setError] = React.useState(false);
+  const [loading, setloading] = useState(false);
+  const [error, setError] = useState(false);
 
   const dispatch = useDispatch();
   const onSubmitHandler = () => {
-    console.log(cleanerDetails, "send to ", baseUrl);
+    setloading(true);
     fetch(`${baseUrl}cleaners/login`, {
       method: "POST",
       headers: {
@@ -28,19 +30,13 @@ export const Login = ({ navigation }) => {
       .then((res) => res.json())
       .then((resp) => {
         if (resp.cleaner !== undefined) {
-          fetch(`${baseUrl}scheduledJobs/cleaners/${resp.cleaner.id}`)
-            .then((respo) => respo.json())
-            .then((res) => {
-              dispatch(addCleaner(resp.cleaner));
-              dispatch(addJobs(res.scheduledJobs));
-              navigation.navigate("dashboard");
-            });
-
-          
+          setloading(false);
+          dispatch(addCleaner(resp.cleaner));
+          navigation.navigate("dashboard");
         }
       })
       .catch((err) => {
-        
+        setloading(false);
         console.log(err);
         setError(true);
       });
@@ -82,12 +78,22 @@ export const Login = ({ navigation }) => {
         {error ? <Text>Invalid Credentials</Text> : null}
 
         <Button
+          icon={() =>
+            loading ? (
+              <EvilIcons name="spinner" size={20} color="white" />
+            ) : (
+              <EvilIcons name="unlock" size={20} color="white" />
+            )
+          }
           onPress={() => onSubmitHandler()}
           style={styles.button}
           mode="contained"
         >
           LOGIN
         </Button>
+        {
+          loading ? <ActivityIndicator/> : null
+        }
       </View>
     </View>
   );

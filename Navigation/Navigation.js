@@ -1,23 +1,21 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import React from 'react';
+import React from "react";
 import { Drawer } from "react-native-paper";
-import { useSelector } from 'react-redux';
-import OneEvent from '../Components/OneEvent/OneEvent';
+import { useSelector } from "react-redux";
+import OneEvent from "../Components/OneEvent/OneEvent";
 import CameraScreen from "../Screens/Camera/CameraScreen";
 import DashBoard from "../Screens/Dashboard/DashBoard";
 import { Login } from "../Screens/Login/Login";
 import ManageEvent from "../Screens/ManageEvent/ManageEvent";
 const Stack = createStackNavigator();
 
-
 export const Navigator = () => {
-  const isLogged = useSelector((state) => state.cleaner.loggedIn)
-  console.log(isLogged)
+  const isLogged = useSelector((state) => state.cleaner.loggedIn);
+  console.log(isLogged);
   return (
     <NavigationContainer>
-      
-      <Stack.Navigator> 
+      <Stack.Navigator>
         {isLogged ? null : (
           <Stack.Screen
             name="login"
@@ -30,34 +28,26 @@ export const Navigator = () => {
           name="dashboard"
           component={DashBoard}
           options={{
-            headerTintColor: "black",
-          title:'MY CALENDER',
-             headerStyle: {
-               backgroundColor: '#0487D9',
-              
-               
-            
-          },
-
+            headerShown: false,
             
           }}
         />
-        <Stack.Screen name="event"
-          component={OneEvent}/>
+        <Stack.Screen name="event" component={OneEvent} />
 
-        
         <Stack.Screen
           name="manage"
           component={ManageEvent}
           options={{
-            headerTintColor: "blue",
-            headerBackTitle: "Update Your Taks",
+            headerShown: false,
+            
           }}
         />
-        <Stack.Screen name="camera"
-          component={CameraScreen}/>
+        <Stack.Screen
+          name="camera"
+          component={CameraScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
-
     </NavigationContainer>
   );
 };
