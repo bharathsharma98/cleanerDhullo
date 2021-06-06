@@ -7,7 +7,8 @@ import './Camera.styles'
 import { Styles } from './Camera.styles';
 import * as ImageManipulator from "expo-image-manipulator";
 
-export default function CameraScreen({navigation}) {
+export default function CameraScreen({ route, navigation }) {
+    const { eventId } = route.params;
      const [hasPermission, setHasPermission] = useState(null);
     const [type, setType] = useState(Camera.Constants.Type.back);
 
@@ -45,7 +46,7 @@ const cameraRef= useRef(null)
           )
           await console.log("after",compressedImage)
           const jsonPhoto = await JSON.stringify(compressedImage);
-          await AsyncStorage.setItem("localPhoto", jsonPhoto);
+          await AsyncStorage.setItem(`localPhoto${eventId}`, jsonPhoto);
           navigation.navigate("manage", { myPhoto: photo });
               
         }

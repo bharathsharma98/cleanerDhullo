@@ -27,7 +27,7 @@ export default function ManageEvent({ route, navigation }) {
 });
  
   const fetchImageFromLocal = async () => {
-    const localPhoto = await AsyncStorage.getItem("localPhoto");
+    const localPhoto = await AsyncStorage.getItem(`localPhoto${eventJob.id}`);
     await setLoaclPic(JSON.parse(localPhoto)) 
     if (localPhoto === null) {
      await setEventJob({
@@ -37,12 +37,7 @@ export default function ManageEvent({ route, navigation }) {
     }
   }
 
-//   const setAlreadyUpdatedJob = () => {
-  
-// }
-// useEffect(() => {
-  
-// },[])
+ 
   useEffect(() => {
     fetchImageFromLocal()
   },[myPhoto])
@@ -51,7 +46,7 @@ export default function ManageEvent({ route, navigation }) {
  
   
   
-  const dispatchEvent =   () => {
+  const dispatchEvent =() => {
     dispatch(
       updateOldJob({
         date: myDate,
@@ -66,7 +61,7 @@ export default function ManageEvent({ route, navigation }) {
         },
       })
     );
-    AsyncStorage.clear()
+    
     navigation.navigate("dashboard")
 }
 
@@ -106,6 +101,7 @@ export default function ManageEvent({ route, navigation }) {
         {selectedData.service === "WASHING" ? (
           <View style={Styles().carAvailiableContainer}>
             <CheckBox
+              disabled={selectedData.serviceStatus === "Complete"}
               value={eventJob.carAvailable}
               onValueChange={() =>
                 setEventJob({
@@ -122,6 +118,7 @@ export default function ManageEvent({ route, navigation }) {
             <View style={Styles().interiorLightsCheckBoc}>
               <Text>Interior</Text>
               <CheckBox
+                disabled={selectedData.serviceStatus === "Complete"}
                 value={eventJob.interior}
                 onValueChange={() =>
                   setEventJob({
@@ -135,6 +132,7 @@ export default function ManageEvent({ route, navigation }) {
             <View style={Styles().interiorLightsCheckBoc}>
               <Text>Lights Off</Text>
               <CheckBox
+                disabled={selectedData.serviceStatus === "Complete"}
                 value={eventJob.lightsOff}
                 onValueChange={() =>
                   setEventJob({
@@ -148,6 +146,7 @@ export default function ManageEvent({ route, navigation }) {
             <View style={Styles().interiorLightsCheckBoc}>
               <Text>Return Keys</Text>
               <CheckBox
+                disabled={selectedData.serviceStatus === "Complete"}
                 value={eventJob.returnKeys}
                 onValueChange={() =>
                   setEventJob({
@@ -161,7 +160,12 @@ export default function ManageEvent({ route, navigation }) {
           </View>
         )}
         <View style={Styles().imageContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate("camera")}>
+          <TouchableOpacity
+            disabled={selectedData.serviceStatus === "Complete"}
+            onPress={() =>
+              navigation.navigate("camera", { eventId: eventJob.id })
+            }
+          >
             <Image
               style={Styles().logo}
               source={{
@@ -173,20 +177,14 @@ export default function ManageEvent({ route, navigation }) {
           <Image
             style={Styles().logo2}
             source={{
-              uri:
-                eventJob.imageUrl?.uri === undefined ||
-                eventJob.imageUrl.uri === null
-                  ? localPic?.uri
-                  : ReduxEvents[myDate.toString].jobs.map((oneJob) =>
-                      oneJob.id === eventJob.id
-                        ? oneJob.imageUrl.uri
-                        : localPic?.uri
-                    ),
+              uri: localPic?.uri,
+              //todo : see redux first then put localPic and clear async
             }}
           />
         </View>
         <View style={Styles().messageContainer}>
           <TextInput
+            disabled={selectedData.serviceStatus === "Complete"}
             onChangeText={(text) => setEventJob({ ...eventJob, message: text })}
             placeholder="Write a Message"
             value={eventJob.message}
@@ -198,7 +196,7 @@ export default function ManageEvent({ route, navigation }) {
         <View style={Styles().buttonContainer}>
           <Button
             color="#03588C"
-            disabled={selectedData.serviceStatus === "Completed"}
+            disabled={selectedData.serviceStatus === "Complete"}
             onPress={() => dispatchEvent()}
             style={Styles().saveButtom}
             mode="contained"

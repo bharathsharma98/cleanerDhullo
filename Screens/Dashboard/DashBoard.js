@@ -2,19 +2,36 @@ import { AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import React from "react";
-import { FlatList, StatusBar, Text, TouchableOpacity, View } from "react-native";
+
+import {
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { Button } from "react-native-paper";
 import { styles } from "./DashBoard.styles";
 import DashBoardUseform from "./DashBoardUseform";
 function Dashboard({ navigation }) {
-  const { date,checkIn,checkInHandler,checkOut,checkOutHandler,prevDayHandler,nextDayHandler,cleaner,dailyJobs,showJobs} = DashBoardUseform();
+  const {
+    date,
+    checkIn,
+    checkInHandler,
+    checkOut,
+    checkOutHandler,
+    prevDayHandler,
+    nextDayHandler,
+    cleaner,
+    dailyJobs,
+    showJobs,
+  } = DashBoardUseform();
 
-  const NavigationHandler = (selectedData,myDate) => {
+  const NavigationHandler = (selectedData, myDate) => {
     navigation.navigate("manage", { selectedData, myDate });
     AsyncStorage.setItem("eventIdlocal", selectedData._id);
   };
- 
-console.log("JOBS OF TODAY ARE", dailyJobs[date.toDateString()]?.jobs);
+
+  console.log("JOBS OF TODAY ARE", dailyJobs[date.toDateString()]?.jobs);
   return (
     <View style={styles().mainContainer}>
       <Text style={styles().cleanerName}>{cleaner.name}</Text>
@@ -44,9 +61,7 @@ console.log("JOBS OF TODAY ARE", dailyJobs[date.toDateString()]?.jobs);
           color="black"
           mode="outlined"
           style={styles({ checkOutState: checkOut }).checkOutButton}
-          onPress={() => checkOutHandler()
-          }
-
+          onPress={() => checkOutHandler()}
         >
           CHECK OUT
         </Button>
@@ -54,12 +69,16 @@ console.log("JOBS OF TODAY ARE", dailyJobs[date.toDateString()]?.jobs);
 
       <FlatList
         style={styles().FlatList}
-        data={dailyJobs[date.toDateString()] === undefined? []: dailyJobs[date.toDateString()].jobs}
+        data={
+          dailyJobs[date.toDateString()] === undefined
+            ? []
+            : dailyJobs[date.toDateString()].jobs
+        }
         keyExtractor={(onejob) => {
           onejob.item?._id;
         }}
         renderItem={(onejob) => (
-          <View style={styles({ showMode:showJobs}).cards}>
+          <View style={styles({ showMode: showJobs }).cards}>
             <TouchableOpacity
               disabled={!showJobs}
               style={styles({ service: onejob.item.service }).oneJob}

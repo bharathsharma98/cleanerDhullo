@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector} from "react-redux";
-import { addDays ,setHours, subHours} from "date-fns";
+import { addDays, subHours } from "date-fns";
+import { useEffect, useState } from "react";
+import { Alert } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  addJobs,
-  addAttendence,
+  addAttendence, addJobs,
+
   addOnlyJobsArray,
   updateFailedJob,
   updateOldJob
 } from "../../Redux/Actions/CleanerActions";
 import { baseUrl } from "../../Variables/Variables";
- 
 
 export default function DashBoardUseform() {
   //?redux
@@ -27,8 +28,26 @@ export default function DashBoardUseform() {
 
   //?useEffects
   useEffect(() => {
-    if (date.toDateString() === new Date().toDateString()) {
+    if (
+      date.toDateString() === new Date().toDateString()
+      
+    ) {
+      if (dailyJobs[date.toDateString()]?.attendence === 'checkedOut') {
+        setCheckIn(false)
+        setCheckOut(false)
+      }
+      else if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
+        setCheckIn(false)
+      }
+        console.log(
+          date.toDateString() === new Date().toDateString(),
+          "is Today"
+        );
       setCheckIn(true);
+    }
+    else {
+      setCheckIn(false)
+      setCheckOut(false)
     }
 
     fetchDailyJobs();
@@ -36,28 +55,29 @@ export default function DashBoardUseform() {
   }, []);
 
   useEffect(() => {
- 
-    if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
-      // if (dailyJobs[date.toDateString()]?.attendence === "checkedOut")
+     
+      if (date.toDateString() === new Date().toDateString()) {
+        if (dailyJobs[date.toDateString()]?.attendence === "checkedOut") {
+          setCheckIn(false);
+          setCheckOut(false);
+        } else if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
+          setCheckIn(false);
+        }
+        console.log(
+          date.toDateString() === new Date().toDateString(),
+          "is Today"
+        );
+        setCheckIn(true);
+      } else {
         setCheckIn(false);
-    } else {
-      setCheckIn(true);
-    }
-    if (
-      dailyJobs[date.toDateString()]?.attendence === "checkedIn" &&
-      date.toDateString() === new Date().toDateString()
-    ) {
-      setCheckOut(true);
-    } else {
-      setCheckOut(false);
-    }
+        setCheckOut(false);
+        setShowJobs(false)
+      }
     if (dailyJobs[date.toDateString()] === undefined) {
-      fetchDailyJobs()
+      fetchDailyJobs();
+    } else {
+      fetchDailyJobsArray();
     }
-    else {
-       fetchDailyJobsArray();
-    }
-   
   }, [date]);
   //?functions
 
@@ -90,32 +110,91 @@ export default function DashBoardUseform() {
       .catch((err) => console.log(err));
   };
 
-  const checkOutHandler = () => {
-   
+  const checkOutHandler = async() => {
 
-    setCheckOut(false);
-    setShowJobs(false);
-    const jobsCompleted = dailyJobs[date.toDateString()].jobs.filter((oneJob) => oneJob.serviceStatus === 'Complete');
-    const pendingJobs = dailyJobs[date.toDateString()].jobs.filter((oneJob) => oneJob.serviceStatus === 'Pending')
+   await fetch(`${baseUrl}cleaners/checkOut/${cleaner.id}`, {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json",
+     },
+     body: JSON.stringify({
+       checkOut:new Date().toISOString()
+     }),
+   }).then((res) => res.json())
+     .then((resp) => {
+       if (resp) {
+         console.log("CHECKED OUT");
+         setCheckIn(false);
+         setCheckOut(false);
+         setShowJobs(false);
+         dispatch(
+           addAttendence({
+             date: date,
+             status: "checkedOut",
+           })
+          
+         );
+          updateJobsAfterCheckout();
+      }
+    })
+     .catch((err) => {
+        console.log("CHECKED IN");
+       const missedJobsNoNetwork =   JSON.stringify(dailyJobs[date.toDateString()].jobs);
+       const dateOfCheckout =   JSON.stringify(new Date())
+         AsyncStorage.setItem("backgroundJobs", missedJobsNoNetwork);
+       AsyncStorage.setItem("checkOutDate", dateOfCheckout)
+       console.log(missedJobsNoNetwork, dateOfCheckout);
+  })
+  };
+
+  const updateJobsAfterCheckout = () => {
+    const jobsCompleted = dailyJobs[date.toDateString()].jobs.filter(
+      (oneJob) => oneJob.serviceStatus === "Complete"
+    );
+    const pendingJobs = dailyJobs[date.toDateString()].jobs.filter(
+      (oneJob) => oneJob.serviceStatus === "Pending"
+    );
 
     console.log(jobsCompleted, "pendingJobs");
     console.log(pendingJobs, "pendingJobs");
 
     if (pendingJobs.length !== 0) {
-      alert("jobs pending")
-      //todo hanldle popup here
-    pendingJobs.map((oneJob)=>updateJobsAsMissed(oneJob))
+      Alert.alert("PENDING JOBS!!", "Jobs Pending Are you sure to Checkout?", [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            pendingJobs.map((oneJob) => updateJobsAsMissed(oneJob));
+            setCheckOut(false);
+            setShowJobs(false);
+          },
+        },
+      ]);
+    } else {
+      Alert.alert("CONFIRM", " Are you sure to Checkout?", [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            jobsCompleted.map((oneJob) => updateDailyJobsWithAPI(oneJob));
+            setCheckOut(false);
+            setShowJobs(false);
+          },
+        },
+      ]);
     }
-    else {
-      alert("Are you Sure");
-      //todo handle alert
-      jobsCompleted.map((oneJob)=>updateDailyJobsWithAPI(oneJob))
-    }
 
-
-
-  };
-
+}
+ 
+ //todo checkout api --> in netInfo
   const updateDailyJobsWithAPI = async (job) => {
     await fetch(`${baseUrl}scheduledJobs/${job.id}`, {
       method: "PATCH",
@@ -124,23 +203,23 @@ export default function DashBoardUseform() {
       },
       body: JSON.stringify({
         serviceStatus: job.serviceStatus,
-        message:job.message
+        message: job.message,
       }),
-    }).then((res) => res.json())
+    })
+      .then((res) => res.json())
       .then((resp) => {
         //todo action update as Complete
-        updateOldJob({job:job,date:date})
+        updateOldJob({ job: job, date: date });
       })
       .catch((err) => {
-        console.log(err)
+        console.log(err);
         //todo action update as Incomplete
       });
-      
-  }
+  };
   const updateJobsAsMissed = (job) => {
     dispatch(updateFailedJob({ job: job, date: date }));
     //todo action update ad Incomplete
-  }
+  };
   const prevDayHandler = () => {
     setDate(addDays(date, -1));
   };
@@ -149,7 +228,6 @@ export default function DashBoardUseform() {
   };
 
   const fetchDailyJobs = () => {
-
     console.log(subHours(addDays(date, -1), 5).toISOString(), "fate passed");
     fetch(`${baseUrl}scheduledJobs/ByDate/cleaner/${cleaner.id}`, {
       method: "POST",
@@ -157,8 +235,8 @@ export default function DashBoardUseform() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        start: subHours(addDays(date,0), 5).toISOString(),
-        end: subHours(addDays(date, 1), 5).toISOString(),
+        start: subHours(addDays(date, -1), 5).toISOString(),
+        end: subHours(addDays(date, 0), 5).toISOString(),
       }),
     })
       .then((res) => res.json())
@@ -176,8 +254,8 @@ export default function DashBoardUseform() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        start: subHours(addDays(date, 0), 5).toISOString(),
-        end: subHours(addDays(date, 1), 5).toISOString(),
+        start: subHours(addDays(date, -1), 5).toISOString(),
+        end: subHours(addDays(date, 0), 5).toISOString(),
       }),
     })
       .then((res) => res.json())
@@ -195,6 +273,9 @@ export default function DashBoardUseform() {
     date,
     checkIn,
     checkOut,
+
+    setCheckIn,
+    setCheckOut,
     showJobs,
     checkInHandler,
     checkOutHandler,
