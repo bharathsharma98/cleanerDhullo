@@ -42,7 +42,7 @@ const cameraRef= useRef(null)
                   width: photo.width * 0.5,
                 height:photo.height*0.5}
               }],
-              {compress:0.9,format:ImageManipulator.SaveFormat.JPEG}
+              { compress:0.5,format:ImageManipulator.SaveFormat.JPEG, base64:true}
           )
           await console.log("after",compressedImage)
           const jsonPhoto = await JSON.stringify(compressedImage);

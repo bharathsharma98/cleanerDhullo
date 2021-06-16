@@ -4,7 +4,7 @@ import { StatusBar, StyleSheet } from "react-native";
 export const styles = (props) =>
   StyleSheet.create({
     mainContainer: {
-      marginTop:StatusBar.currentHeight
+      marginTop: StatusBar.currentHeight,
     },
     cleanerName: {
       fontSize: 20,
@@ -84,5 +84,24 @@ export const styles = (props) =>
 
     cards: {
       opacity: props?.showMode ? 1 : 0.3,
+    },
+    emptyJobsContainer: {
+      display: "flex",
+      margin: 25,
+      marginVertical: 120,
+      justifyContent: "flex-start",
+      alignItems: "flex-start",
+      height: "60%",
+    },
+    emptyJobsText: {
+      fontSize: 45,
+      fontFamily: "serif",
+    },
+    emptyJobsTextCleaner: {
+      width:'100%',
+      fontSize: 65,
+      fontFamily: "serif",
+      fontWeight: "bold",
+      color: "#03588C",
     },
   });

@@ -27,7 +27,7 @@ export const updateOldJobsFunc = (originalJobs, NewJobAndDate) => {
       NewJobAndDate.job.id
     ) {
       originalJobs[NewJobAndDate.date.toDateString()].jobs[i].serviceStatus =
-        "Complete";
+        NewJobAndDate.job.status;
       originalJobs[NewJobAndDate.date.toDateString()].jobs[i].interior =
         NewJobAndDate.job.interior;
       originalJobs[NewJobAndDate.date.toDateString()].jobs[i].lightsOff =

@@ -82,7 +82,7 @@ export const Navigator = () => {
             console.log("response is achieved");
             dispatch(
               addAttendence({
-                date: new Date(parsedCheckoutDate).toDateString(),
+                date: new Date(parsedCheckoutDate),
                 status: "checkedOut",
               })
             );
@@ -97,7 +97,7 @@ export const Navigator = () => {
     }
   };
   const updateDailyJobsWithAPI = async (job) => {
-    console.log("reached update in background");
+    console.log("reached update in background",job);
     await fetch(`${baseUrl}scheduledJobs/${job.id}`, {
       method: "PATCH",
       headers: {
@@ -119,6 +119,18 @@ export const Navigator = () => {
         console.log(err);
         //todo action update as Incomplete
       });
+    
+     await fetch(`${baseUrl}imageUpload/${job.id}`, {
+       method: "PATCH",
+       headers: {
+         "Content-Type": "application/json",
+       },
+       body: JSON.stringify({
+         imgSource:job.imageUrl.base64
+       }),
+     }).then((res) => res.json())
+      .then((resp)=>console.log("after uploading image",resp));
+    
     if (count === parsedJob.length) {
       AsyncStorage.removeItem("backgroundJobs", (err) => {
         console.log(err);

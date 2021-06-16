@@ -24,6 +24,7 @@ function Dashboard({ navigation }) {
     cleaner,
     dailyJobs,
     showJobs,
+    
   } = DashBoardUseform();
 
   const NavigationHandler = (selectedData, myDate) => {
@@ -31,7 +32,7 @@ function Dashboard({ navigation }) {
     AsyncStorage.setItem("eventIdlocal", selectedData._id);
   };
 
-  console.log("JOBS OF TODAY ARE", dailyJobs[date.toDateString()]?.jobs);
+  
   return (
     <View style={styles().mainContainer}>
       <Text style={styles().cleanerName}>{cleaner.name}</Text>
@@ -60,53 +61,64 @@ function Dashboard({ navigation }) {
           icon="check"
           color="black"
           mode="outlined"
+          disabled={!checkOut}
           style={styles({ checkOutState: checkOut }).checkOutButton}
           onPress={() => checkOutHandler()}
         >
           CHECK OUT
         </Button>
       </View>
-
-      <FlatList
-        style={styles().FlatList}
-        data={
-          dailyJobs[date.toDateString()] === undefined
-            ? []
-            : dailyJobs[date.toDateString()].jobs
-        }
-        keyExtractor={(onejob) => {
-          onejob.item?._id;
-        }}
-        renderItem={(onejob) => (
-          <View style={styles({ showMode: showJobs }).cards}>
-            <TouchableOpacity
-              disabled={!showJobs}
-              style={styles({ service: onejob.item.service }).oneJob}
-              onPress={() => NavigationHandler(onejob.item, date)}
-            >
-              <Text style={styles().timetext}>
-                {format(new Date(onejob.item.start), "hh:mm")}
-              </Text>
-              {/* <Text>{onejob.item.service}</Text> */}
-              <Text style={styles().carNo}>
-                {onejob.item.title?.toString()?.substr(12)}
-              </Text>
-              {/* <Text style={styles.serviceType}>{onejob.item.serviceType}</Text> */}
-              <Text style={styles().statusContaine}>
-                {onejob.item.serviceStatus === "Pending" ? (
-                  <AntDesign name="exclamationcircleo" size={28} color="grey" />
-                ) : null}
-                {onejob.item.serviceStatus === "Complete" ? (
-                  <AntDesign name="check" size={28} color="green" />
-                ) : null}
-                {onejob.item.serviceStatus === "Incomplete" ? (
-                  <AntDesign name="closecircleo" size={28} color="red" />
-                ) : null}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+      {dailyJobs[date.toDateString()]?.jobs.length === 0 ? (
+        <View style={styles().emptyJobsContainer}>
+          <Text style={styles().emptyJobsText}>No Jobs Today</Text>
+          <Text style={styles().emptyJobsTextCleaner}>{cleaner.name}.</Text>
+        </View>
+      ) : (
+        <FlatList
+          style={styles().FlatList}
+          data={
+            dailyJobs[date.toDateString()] === undefined
+              ? []
+              : dailyJobs[date.toDateString()].jobs
+          }
+          keyExtractor={(onejob) => {
+            onejob.item?._id;
+          }}
+          renderItem={(onejob) => (
+            <View style={styles({ showMode: showJobs }).cards}>
+              <TouchableOpacity
+                disabled={!showJobs}
+                style={styles({ service: onejob.item.service }).oneJob}
+                onPress={() => NavigationHandler(onejob.item, date)}
+              >
+                <Text style={styles().timetext}>
+                  {format(new Date(onejob.item.start), "hh:mm")}
+                </Text>
+                {/* <Text>{onejob.item.service}</Text> */}
+                <Text style={styles().carNo}>
+                  {onejob.item.title?.toString()?.substr(12)}
+                </Text>
+                {/* <Text style={styles.serviceType}>{onejob.item.serviceType}</Text> */}
+                <Text style={styles().statusContaine}>
+                  {onejob.item.serviceStatus === "Pending" ? (
+                    <AntDesign
+                      name="exclamationcircleo"
+                      size={28}
+                      color="grey"
+                    />
+                  ) : null}
+                  {onejob.item.serviceStatus === "Complete" ? (
+                    <AntDesign name="check" size={28} color="green" />
+                  ) : null}
+                  {onejob.item.serviceStatus === "Incomplete" ? (
+                    <AntDesign name="closecircleo" size={28} color="red" />
+                  ) : null}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }

@@ -32,7 +32,11 @@ export const Login = ({ navigation }) => {
         if (resp.cleaner !== undefined) {
           setloading(false);
           dispatch(addCleaner(resp.cleaner));
+        
           navigation.navigate("dashboard");
+        }
+        else {
+             setError(true);
         }
       })
       .catch((err) => {
@@ -75,7 +79,11 @@ export const Login = ({ navigation }) => {
             setCleanerDetails({ ...cleanerDetails, password: text })
           }
         />
-        {error ? <Text>Invalid Credentials</Text> : null}
+       
+          {error ? (
+            <Text style={styles.errorMessage}>Invalid Credentials</Text>
+          ) : null}
+        
 
         <Button
           icon={() =>
@@ -91,9 +99,7 @@ export const Login = ({ navigation }) => {
         >
           LOGIN
         </Button>
-        {
-          loading ? <ActivityIndicator/> : null
-        }
+        <View>{loading ? <ActivityIndicator /> : null}</View>
       </View>
     </View>
   );
@@ -141,4 +147,8 @@ const styles = StyleSheet.create({
     // borderColor: 'grey',
     // borderRadius:5
   },
+  errorMessage: {
+    color: 'red',
+    marginVertical:10
+  }
 });
