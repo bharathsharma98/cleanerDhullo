@@ -1,14 +1,30 @@
+var getTime = require("date-fns/getTime");
+// var getHours = require("date-fns/getHours");
+var getDate = require("date-fns/getDate");
+
 export const addJobsFunc = (oldJobs, jobsandDate) => {
   const tempJobs = oldJobs;
+  const sortedJobsDate = jobsandDate.jobs.sort(function (a, b) {
+    return getDate(new Date(a.start)) - getDate(new Date(b.start));
+  });
+  const sortedJobsTime = sortedJobsDate.sort(function (a, b) {
+    return getTime(new Date(a.start)) - getTime(new Date(b.start));
+  });
   tempJobs[jobsandDate.date.toDateString()] = {
-    jobs: jobsandDate.jobs,
+    jobs: sortedJobsTime,
     attendence: "Not Present",
   };
   return tempJobs;
 };
 export const updateJobsArray = (oldJobs, jobsAndDate) => {
   const tempJobs = oldJobs;
-  tempJobs[jobsAndDate.date.toDateString()].jobs = jobsAndDate.jobs;
+  const sortedJobsDate = jobsAndDate.jobs.sort(function (a, b) {
+    return getDate(new Date(a.start)) - getDate(new Date(b.start));
+  });
+    const sortedJobsTime = sortedJobsDate.sort(function (a, b) {
+      return getTime(new Date(a.start)) - getTime(new Date(b.start));
+    });
+  tempJobs[jobsAndDate.date.toDateString()].jobs = sortedJobsTime;
   return tempJobs;
 };
 export const attendenceFunc = (oldjobs, statusAndDate) => {
@@ -69,28 +85,25 @@ export const updateFailJobsFunc = (originalJobs, NewJobAndDate) => {
 
 export const addToQueuefunc = (prevQueue, newId) => {
   if (prevQueue.length === 0) {
-    prevQueue.push(newId)
-
-  }
-  else {
+    prevQueue.push(newId);
+  } else {
     for (let i = 0; i < prevQueue.length; i++) {
-      if (prevQueue[i]=== newId) {
-      return  prevQueue;
-      }
-      else {
-        prevQueue.push(newId)
+      if (prevQueue[i] === newId) {
+        return prevQueue;
+      } else {
+        prevQueue.push(newId);
       }
     }
   }
-  
+
   return prevQueue;
-}
+};
 export const removeFromQueue = (prevQueue, newId) => {
   // console.log(prevQueue);
   if (prevQueue.length !== 0) {
-     const index = prevQueue.indexOf(newId);
-     if (index > -1) prevQueue.splice(index, 1);
-  }  
-// console.log(prevQueue);
+    const index = prevQueue.indexOf(newId);
+    if (index > -1) prevQueue.splice(index, 1);
+  }
+  // console.log(prevQueue);
   return prevQueue;
 };
