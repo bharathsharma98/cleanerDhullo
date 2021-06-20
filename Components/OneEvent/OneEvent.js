@@ -6,7 +6,7 @@ export default function OneEvent(props, {navigation}) {
   
 
     const NavigationHandler = (selectedData) => {
-      console.log(selectedData , "selected data")
+      // console.log(selectedData , "selected data")
     navigation.navigate("manage", { selectedData });
     }
     return (

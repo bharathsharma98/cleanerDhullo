@@ -4,11 +4,12 @@ import { Alert } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  addAttendence, addJobs,
-
+  addAttendence,
+  addJobs,
   addOnlyJobsArray,
   updateFailedJob,
-  updateOldJob
+  updateOldJob,
+
 } from "../../Redux/Actions/CleanerActions";
 import { baseUrl } from "../../Variables/Variables";
 
@@ -17,6 +18,7 @@ export default function DashBoardUseform() {
   const dispatch = useDispatch();
   const cleaner = useSelector((state) => state.cleaner.cleaner);
   const dailyJobs = useSelector((state) => state.cleaner.dailyJobs);
+  
 
   //todo change cleaner.cleaner if adding .cleaner during login
 
@@ -25,9 +27,14 @@ export default function DashBoardUseform() {
   const [checkIn, setCheckIn] = useState(false);
   const [checkOut, setCheckOut] = useState(false);
   const [showJobs, setShowJobs] = useState(false);
-
+ const [todaysData,setTodaysData]= useState([])
   //?useEffects
+ 
+   
+   
   useEffect(() => {
+       fetchDailyJobs();
+   
     if (
       date.toDateString() === new Date().toDateString()
       
@@ -38,8 +45,10 @@ export default function DashBoardUseform() {
         setCheckOut(false);
         
       } else if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
+        setCheckOut(true)
         setCheckIn(false);
-         
+        setShowJobs(true)
+        // console.log("nope")
       }
       else if (dailyJobs[date.toDateString()]?.attendence === "Not Present")
       {
@@ -51,34 +60,37 @@ export default function DashBoardUseform() {
       setCheckIn(false)
       setCheckOut(false)
     }
-    fetchDailyJobs();
-    //todo:fetch statement here for that day dailyschedules
+   
+ 
+    
   }, []);
 
-  useEffect(() => {
-     
-      if (date.toDateString() === new Date().toDateString()) {
-        if (dailyJobs[date.toDateString()]?.attendence === "checkedOut" ) {
-          setCheckIn(false);
-          setCheckOut(false);
-        } else if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
-          setCheckIn(false);
-        } else if (
-          dailyJobs[date.toDateString()]?.attendence === "Not Present"
-        ) {
-          setCheckIn(true);
-           
-        }
-        
-      } else {
+  useEffect( () => {
+  
+ 
+    if (date.toDateString() === new Date().toDateString()) {
+      if (dailyJobs[date.toDateString()]?.attendence === "checkedOut") {
         setCheckIn(false);
         setCheckOut(false);
-        setShowJobs(false)
+      } else if (dailyJobs[date.toDateString()]?.attendence === "checkedIn") {
+        setCheckIn(false);
+        setCheckOut(true)
+        setShowJobs(true)
+ 
+      } else if (dailyJobs[date.toDateString()]?.attendence === "Not Present") {
+        setCheckIn(true);
       }
-    if (dailyJobs[date.toDateString()] === undefined) {
-      fetchDailyJobs();
     } else {
-      fetchDailyJobsArray();
+      setCheckIn(false);
+      setCheckOut(false);
+      setShowJobs(false);
+    }
+    if (dailyJobs[date.toDateString()] === undefined) {
+        fetchDailyJobs();
+      //  console.log("222")
+    } else {
+      //  console.log("object")
+       fetchDailyJobsArray();
     }
   }, [date]);
   //?functions
@@ -109,7 +121,15 @@ export default function DashBoardUseform() {
           );
         }
       })
-      .catch((err) => console.log(err));
+      .catch((err) => Alert.alert("No Internet Connection", [
+        {
+          text: "Ok",
+          onPress: () => console.log("Okay Pressed"),
+          style: "cancel",
+        },
+       
+        
+      ]));
   };
 
   const checkOutHandler = async() => {
@@ -143,6 +163,7 @@ export default function DashBoardUseform() {
     })
     .catch((err) => {
       const dateOfCheckout = JSON.stringify(new Date());
+      
       AsyncStorage.setItem("checkOutDate", dateOfCheckout);
       console.log(
         "Checking out while offline... saving checkout time for later"
@@ -210,12 +231,12 @@ export default function DashBoardUseform() {
     setDate(addDays(date, 1));
   };
 
-  const fetchDailyJobs = () => {
+  const fetchDailyJobs = async() => {
  
-    const startDateToBePassed = addDays(date, -1).setHours(23)
-    const endDateToBePaassed = addDays(date, 0).setHours(23)
-     console.log("DATE TO BE PAASED", new Date(startDateToBePassed).toString());
-    fetch(`${baseUrl}scheduledJobs/ByDate/cleaner/${cleaner.id}`, {
+     const startDateToBePassed =  addDays(date, -1).setHours(23)
+     const endDateToBePaassed =   addDays(date, 0).setHours(23);
+    //  console.log("DATE TO BE PAASED", new Date(startDateToBePassed).toString());
+    await fetch(`${baseUrl}scheduledJobs/ByDate/cleaner/${cleaner.id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -227,6 +248,7 @@ export default function DashBoardUseform() {
     })
       .then((res) => res.json())
       .then((resp) => {
+        setTodaysData(resp.scheduledJobs);
         dispatch(addJobs({ date: date, jobs: resp.scheduledJobs }));
       })
       .catch((err) => console.log(err));
@@ -246,6 +268,7 @@ export default function DashBoardUseform() {
     })
       .then((res) => res.json())
       .then((resp) => {
+         setTodaysData(resp.scheduledJobs);
         dispatch(
           addOnlyJobsArray({
             date: date,
@@ -259,7 +282,6 @@ export default function DashBoardUseform() {
     date,
     checkIn,
     checkOut,
-
     setCheckIn,
     setCheckOut,
     showJobs,
@@ -269,6 +291,7 @@ export default function DashBoardUseform() {
     nextDayHandler,
     cleaner,
     dailyJobs,
+    todaysData,
     
   };
 }

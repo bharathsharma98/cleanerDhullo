@@ -13,19 +13,19 @@ import {
 } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 import { useDispatch } from "react-redux";
-import { updateOldJob } from "../../Redux/Actions/CleanerActions";
+import { updateOldJob,addToQueue, refresh } from "../../Redux/Actions/CleanerActions";
 import { Styles } from "./ManageEvent.styles";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { baseUrl } from "../../Variables/Variables";
 export default function ManageEvent({ route, navigation }) {
   const { selectedData, myDate, myPhoto } = route.params;
-  console.log("SELECTED DATA", selectedData, myDate);
+  // console.log("SELECTED DATA", selectedData, myDate);
   const dispatch = useDispatch();
   const ReduxEvents = useSelector((state) => state.cleaner.dailyJobs);
   const [localPic, setLoaclPic] = useState("");
   const [eventJob, setEventJob] = useState({
     id: selectedData._id,
-    carAvailable: selectedData.carAvailable,
+    carNotAvialiable:false,
     interior: selectedData.interior,
     lightsOff: selectedData.lightsOff,
     returnKeys: selectedData.returnKeys,
@@ -49,9 +49,24 @@ export default function ManageEvent({ route, navigation }) {
   }, [myPhoto]);
 
   const updatJobOnline = async () => {
+     dispatch(
+       updateOldJob({
+         date: myDate,
+         job: {
+           id: eventJob.id,
+           carNotAvialiable: eventJob.carNotAvialiable,
+           imageUrl: localPic,
+           interior: eventJob.interior,
+           lightsOff: eventJob.lightsOff,
+           message: eventJob.message,
+           returnKeys: eventJob.returnKeys,
+           status: "Pending",
+         },
+       })
+     );
     if (
-      eventJob.carAvailable === undefined ||
-      eventJob.carAvailable === false
+      
+      eventJob.carNotAvialiable === true
       ) {
       //todo - post API with Incomplete status
       fetch(`${baseUrl}scheduledJobs/${eventJob.id}`, {
@@ -60,27 +75,28 @@ export default function ManageEvent({ route, navigation }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          serviceStatus: "CarNotAvailiable",
+          serviceStatus: "CarNotPresent",
           message: eventJob.message,
         }),
       })
         .then((res) => res.json())
         .then((resp) => {
           if (resp.scheduledJob !== undefined) {
-          dispatch(
-            updateOldJob({
-              date: myDate,
-              job: {
-                id: eventJob.id,
-                carAvailable: eventJob.carAvailable,
-                imageUrl: localPic,
-                interior: eventJob.interior,
-                lightsOff: eventJob.lightsOff,
-                message: eventJob.message,
-                returnKeys: eventJob.returnKeys,
-                status: "Incomplete",
-              },
-            })
+            console.log("job updated")
+            dispatch(
+              updateOldJob({
+                date: myDate,
+                job: {
+                  id: eventJob.id,
+                  carNotAvialiable: eventJob.carNotAvialiable,
+                  imageUrl: localPic,
+                  interior: eventJob.interior,
+                  lightsOff: eventJob.lightsOff,
+                  message: eventJob.message,
+                  returnKeys: eventJob.returnKeys,
+                  status: "Incomplete",
+                },
+              })
             );
             fetch(`${baseUrl}imageUpload/${eventJob.id}`, {
               method: "POST",
@@ -96,15 +112,16 @@ export default function ManageEvent({ route, navigation }) {
                 console.log("image upload response", resp);
               })
               .catch((err) => {
-                //todo - add in queue
+                console.log("image response failed")
+                dispatch(addToQueue(eventJob.id));
               });
-        }
+          }
         })
 
         .catch((err) => {
-        
-          //todo - else add to queue
-      })
+          dispatch(addToQueue(eventJob.id));
+          console.log("job update failed")
+        });
       
       
     } else {
@@ -126,7 +143,7 @@ export default function ManageEvent({ route, navigation }) {
                 date: myDate,
                 job: {
                   id: eventJob.id,
-                  carAvailable: eventJob.carAvailable,
+                  carNotAvialiable: eventJob.carNotAvialiable || true,
                   imageUrl: localPic,
                   interior: eventJob.interior,
                   lightsOff: eventJob.lightsOff,
@@ -150,7 +167,7 @@ export default function ManageEvent({ route, navigation }) {
                 console.log("image upload response", resp);
               })
               .catch((err) => {
-                //todo - add in queue
+               dispatch(addToQueue(eventJob.id));
               });
           }
         })
@@ -159,7 +176,7 @@ export default function ManageEvent({ route, navigation }) {
             date: myDate,
             job: {
               id: eventJob.id,
-              carAvailable: eventJob.carAvailable,
+              carNotAvialiable: eventJob.carNotAvialiable,
               imageUrl: localPic,
               interior: eventJob.interior,
               lightsOff: eventJob.lightsOff,
@@ -168,10 +185,11 @@ export default function ManageEvent({ route, navigation }) {
               status: "Complete",
             },
           });
-          console.log("ADD IN QUEUE");
+          dispatch(addToQueue(eventJob.id))
         });
     }
-    await navigation.navigate("dashboard");
+    await dispatch(refresh())
+    await navigation.navigate("dashboard",{pageFrom:"manageEvent"});
   };
 
   return (
@@ -212,16 +230,16 @@ export default function ManageEvent({ route, navigation }) {
               <View style={Styles().carAvailiableContainer}>
                 <CheckBox
                   disabled={selectedData.serviceStatus === "Complete"}
-                  value={eventJob.carAvailable}
+                  value={!eventJob.carNotAvialiable}
                   onValueChange={() =>
                     setEventJob({
                       ...eventJob,
-                      carAvailable: !eventJob.carAvailable,
+                      carNotAvialiable: !eventJob.carNotAvialiable,
                     })
                   }
                   style={Styles().checkbox}
                 />
-                <Text>Car Availiable</Text>
+                <Text>Car Not Availiable</Text>
               </View>
               <View style={Styles().interiorLightsCheckBoc}>
                 <Text>Return Keys</Text>
@@ -242,16 +260,16 @@ export default function ManageEvent({ route, navigation }) {
             <View style={Styles().carAvailiableContainer}>
               <CheckBox
                 disabled={selectedData.serviceStatus === "Complete"}
-                value={eventJob.carAvailable}
+                value={eventJob.carNotAvialiable}
                 onValueChange={() =>
                   setEventJob({
                     ...eventJob,
-                    carAvailable: !eventJob.carAvailable,
+                    carNotAvialiable: !eventJob.carNotAvialiable,
                   })
                 }
                 style={Styles().checkbox}
               />
-              <Text>Car Availiable</Text>
+              <Text>Car Not  Availiable</Text>
             </View>
           )
         ) : (

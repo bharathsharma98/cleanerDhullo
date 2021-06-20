@@ -1,30 +1,34 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import React, { useState, useEffect } from "react";
-import { Drawer } from "react-native-paper";
-import NetInfo from "@react-native-community/netinfo";
-import { useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import OneEvent from "../Components/OneEvent/OneEvent";
+import {
+  addAttendence,
+  updateOldJob,
+  removeFromQueue,
+} from "../Redux/Actions/CleanerActions";
 import CameraScreen from "../Screens/Camera/CameraScreen";
 import DashBoard from "../Screens/Dashboard/DashBoard";
+import DashBoardUseform from "../Screens/Dashboard/DashBoardUseform";
 import { Login } from "../Screens/Login/Login";
 import ManageEvent from "../Screens/ManageEvent/ManageEvent";
 import { baseUrl } from "../Variables/Variables";
-import { useDispatch } from "react-redux";
-import { addAttendence, updateOldJob } from "../Redux/Actions/CleanerActions";
-import DashBoardUseform from "../Screens/Dashboard/DashBoardUseform";
 const Stack = createStackNavigator();
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const Navigator = () => {
   const { setCheckOut } = DashBoardUseform();
   const [netInfo, setNetInfo] = useState("");
   const isLogged = useSelector((state) => state.cleaner.loggedIn);
   const cleaner = useSelector((state) => state.cleaner.cleaner);
-
+  const originalJobs = useSelector((state) => state.cleaner.dailyJobs);
+  const queuedJobs = useSelector((state) => state.cleaner.pendingQueue);
+  // console.log(queuedJobs, "Jobs pending to upload");
   const dispatch = useDispatch();
 
-  console.log(isLogged);
+  // console.log(isLogged);
   useEffect(() => {
     // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -55,91 +59,91 @@ export const Navigator = () => {
 
   useEffect(() => {
     if (netInfo.isConnected === true) {
-      fetchbackgroundJobsAndDate();
+      handleQueuedjobsOnline();
     }
   }, [netInfo]);
-  const [count, setCount] = useState(0);
-  const fetchbackgroundJobsAndDate = async () => {
-    const backGroundJobs = await AsyncStorage.getItem("backgroundJobs");
-    const parsedJob = await JSON.parse(backGroundJobs);
+
+  const handleQueuedjobsOnline = async () => {
     const checkoutDate = await AsyncStorage.getItem("checkOutDate");
     const parsedCheckoutDate = await JSON.parse(checkoutDate);
-    if (parsedJob !== undefined || parsedCheckoutDate !== undefined) {
-      //todo fetch
-      console.log(parsedCheckoutDate, "and", parsedJob);
-      fetch(`${baseUrl}cleaners/checkOut/${cleaner.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          checkOut: parsedCheckoutDate,
-        }),
-      })
-        .then((res) => res.json())
-        .then((resp) => {
-          if (resp) {
-            console.log("response is achieved");
-            dispatch(
-              addAttendence({
-                date: new Date(parsedCheckoutDate),
-                status: "checkedOut",
-              })
-            );
-            parsedJob.map((oneJob) => updateDailyJobsWithAPI(oneJob));
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+    // console.log(parsedCheckoutDate);
+    if (parsedCheckoutDate !== null || parsedCheckoutDate !== undefined) {
+      await updatePendingCheckout(parsedCheckoutDate);
+    }
 
-      //todo clear async storage
+    //todo fetch
+    if (queuedJobs.length === 0) {
+      // console.log("No jobs pending");
+      //todo - unsubscribe the listening for netInfo
+    } else {
+      queuedJobs.map((oneQJobId) =>
+        updateDailyJobsWithAPI(oneQJobId, parsedCheckoutDate)
+      );
     }
   };
-  const updateDailyJobsWithAPI = async (job) => {
-    console.log("reached update in background",job);
-    await fetch(`${baseUrl}scheduledJobs/${job.id}`, {
+
+  const updatePendingCheckout = async (parsedCheckoutDate) => {
+    fetch(`${baseUrl}cleaners/checkOut/${cleaner.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        checkOut: parsedCheckoutDate,
+      }),
+    })
+      .then((res) => res.json())
+      .then((resp) => {
+        if (resp === "Check Out for this Date is already available") {
+           AsyncStorage.clear();
+        }
+        // console.log(resp);
+          // console.log("checked out successfully");
+      })
+      .catch((err) => {
+        console.log(err);
+        // console.log("checkout while coming online failed");
+      });
+  };
+  const updateDailyJobsWithAPI = (jobId,date) => {
+    // console.log("job to upload here", jobId);
+    const dateUpload = new Date().toDateString()
+    // console.log(originalJobs[dateUpload], "jobs");
+    const index = originalJobs[dateUpload].jobs.findIndex((x) => x.id === jobId);
+    const jobToUpload = originalJobs[dateUpload].jobs[index];
+    // console.log(jobToUpload, "Job to Upload");
+    fetch(`${baseUrl}scheduledJobs/${jobToUpload.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        serviceStatus: job.serviceStatus,
-        message: job.message,
+        serviceStatus: jobToUpload.serviceStatus,
+        message: jobToUpload.message === undefined ? " " : jobToUpload.message,
       }),
-    })
-      .then((res) => res.json())
+    }).then((res) => res.json())
       .then((resp) => {
-        dispatch(updateOldJob({ job: job, date: date }));
-        setCheckOut(false);
-        setCount(count + 1);
-        console.log(count, "JOB UPDATED IN BG");
-      })
-      .catch((err) => {
-        console.log(err);
-        //todo action update as Incomplete
-      });
+        if (resp.scheduledJob !== undefined) {
+        console.log("job uploaded..now trying image upload")
+        fetch(`${baseUrl}imageUpload/${jobToUpload.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imgSource: jobToUpload.imageUrl.base64,
+          }),
+        })
+          .then((res) => res.json())
+          .then((resp) => {
+            if (resp) {
+              // console.log("image uploaded succesfuly..Removing job from queue")
+              dispatch(removeFromQueue(jobId));
+            }
+          });
+      }})
+    };
     
-     await fetch(`${baseUrl}imageUpload/${job.id}`, {
-       method: "PATCH",
-       headers: {
-         "Content-Type": "application/json",
-       },
-       body: JSON.stringify({
-         imgSource:job.imageUrl.base64
-       }),
-     }).then((res) => res.json())
-      .then((resp)=>console.log("after uploading image",resp));
-    
-    if (count === parsedJob.length) {
-      AsyncStorage.removeItem("backgroundJobs", (err) => {
-        console.log(err);
-      });
-      AsyncStorage.removeItem("checkOutDate", (err) => {
-        console.log(err);
-      });
-    }
-  };
   return (
     <NavigationContainer>
       <Stack.Navigator>

@@ -4,12 +4,16 @@ import {
   attendenceFunc,
   updateJobsArray,
   updateFailJobsFunc,
+  addToQueuefunc,
+  removeFromQueue,
 } from "./CleanerConditions";
 
 const initState = {
   cleaner: [],
   dailyJobs: {},
+  pendingQueue:[],
   loggedIn: false,
+  refreshed:false
 };
 
 export const CleanerReducer = (state = initState, action) => {
@@ -17,40 +21,57 @@ export const CleanerReducer = (state = initState, action) => {
     case "ADD_CLEANER":
       return {
         ...state,
-        loggedIn: true,
+        
         cleaner: action.payload,
       };
     case "ADD_JOB":
       return {
         ...state,
-        loggedIn: true,
-        dailyJobs:addJobsFunc(state.dailyJobs,action.payload),
+        dailyJobs: addJobsFunc(state.dailyJobs, action.payload),
       };
 
     case "UPDATE_JOB":
       return {
         ...state,
-        loggedIn: true,
-        dailyJobs: updateOldJobsFunc(state.dailyJobs, action.payload),
+        
+        dailyJobs:updateOldJobsFunc(state.dailyJobs, action.payload),
       };
     case "UPDATE_JOB_FAIL":
       return {
         ...state,
-        loggedIn: true,
+        
         dailyJobs: updateFailJobsFunc(state.dailyJobs, action.payload),
       };
     case "ATTENDENCE":
       return {
         ...state,
-        loggedIn: true,
+       
         dailyJobs: attendenceFunc(state.dailyJobs, action.payload),
       };
     case "ADD_ONLY_JOB":
       return {
-      ...state,
-      loggedIn: true,
-      dailyJobs: updateJobsArray(state.dailyJobs,action.payload)
-    };
+        ...state,
+        
+        dailyJobs: updateJobsArray(state.dailyJobs, action.payload),
+      };
+    case "ADD_TO_QUEUE":
+      return {
+        ...state,
+        
+        pendingQueue: addToQueuefunc(state.pendingQueue, action.payload),
+      };
+    case "REMOVE_TO_QUEUE":
+      return {
+        ...state,
+        
+        pendingQueue: removeFromQueue(state.pendingQueue, action.payload),
+      };
+    case "REFRESH":
+      return {
+        ...state,
+       
+        refreshed:!state.refreshed
+      };
     default:
       return state;
   }

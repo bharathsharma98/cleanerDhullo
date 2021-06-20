@@ -31,9 +31,9 @@ const cameraRef= useRef(null)
       
       if (cameraRef) {
           let photo = await cameraRef.current.takePictureAsync();
-          console.log(photo)
+          // console.log(photo)
         if (photo.uri !== undefined) {
-            console.log("before",photo)
+            // console.log("before",photo)
            
             const compressedImage = await ImageManipulator.manipulateAsync(
               photo.uri,

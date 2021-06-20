@@ -1,22 +1,22 @@
 export const addJobsFunc = (oldJobs, jobsandDate) => {
-  console.log("old jobs", oldJobs);
-  console.log("PayLoad", jobsandDate);
-  oldJobs[jobsandDate.date.toDateString()] = {
+  const tempJobs = oldJobs;
+  tempJobs[jobsandDate.date.toDateString()] = {
     jobs: jobsandDate.jobs,
     attendence: "Not Present",
   };
-  return oldJobs;
+  return tempJobs;
 };
 export const updateJobsArray = (oldJobs, jobsAndDate) => {
-  oldJobs[jobsAndDate.date.toDateString()].jobs = jobsAndDate.jobs;
-  return oldJobs;
+  const tempJobs = oldJobs;
+  tempJobs[jobsAndDate.date.toDateString()].jobs = jobsAndDate.jobs;
+  return tempJobs;
 };
 export const attendenceFunc = (oldjobs, statusAndDate) => {
   oldjobs[statusAndDate.date.toDateString()].attendence = statusAndDate.status;
   return oldjobs;
 };
 export const updateOldJobsFunc = (originalJobs, NewJobAndDate) => {
-  console.log(NewJobAndDate.date, "hello");
+  // console.log(NewJobAndDate.date, "hello");
   for (
     let i = 0;
     i < originalJobs[NewJobAndDate.date.toDateString()].jobs.length;
@@ -65,4 +65,32 @@ export const updateFailJobsFunc = (originalJobs, NewJobAndDate) => {
   }
 
   return originalJobs;
+};
+
+export const addToQueuefunc = (prevQueue, newId) => {
+  if (prevQueue.length === 0) {
+    prevQueue.push(newId)
+
+  }
+  else {
+    for (let i = 0; i < prevQueue.length; i++) {
+      if (prevQueue[i]=== newId) {
+      return  prevQueue;
+      }
+      else {
+        prevQueue.push(newId)
+      }
+    }
+  }
+  
+  return prevQueue;
+}
+export const removeFromQueue = (prevQueue, newId) => {
+  // console.log(prevQueue);
+  if (prevQueue.length !== 0) {
+     const index = prevQueue.indexOf(newId);
+     if (index > -1) prevQueue.splice(index, 1);
+  }  
+// console.log(prevQueue);
+  return prevQueue;
 };

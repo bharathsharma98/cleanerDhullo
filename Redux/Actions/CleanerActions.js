@@ -35,3 +35,21 @@ export const updateFailedJob=(jobAndDate) => {
   };
 };
  
+export const addToQueue = (newId) => {
+  return {
+    type: "ADD_TO_QUEUE",
+    payload:newId
+  };
+}
+export const removeFromQueue = (jobId) => {
+  return {
+    type: "REMOVE_TO_QUEUE",
+    payload: jobId,
+  };
+}
+export const refresh = () => {
+  return {
+    type: "REFRESH",
+    
+  };
+}

@@ -49,6 +49,9 @@ export const styles = (props) =>
       backgroundColor: "#f7722f",
       opacity: props?.checkOutState ? 1 : 0.3,
     },
+    FlatList: {
+      height: "75%",
+    },
     oneJob: {
       display: "flex",
       flexDirection: "row",
@@ -60,6 +63,10 @@ export const styles = (props) =>
           : null || props?.service === "DETAILING"
           ? "#F29BB2"
           : null,
+      opacity:
+       ( props?.status === 'Pending')
+          ? 1
+          : 0.5,
       margin: 5,
       marginRight: 10,
       marginLeft: 10,
@@ -98,7 +105,7 @@ export const styles = (props) =>
       fontFamily: "serif",
     },
     emptyJobsTextCleaner: {
-      width:'100%',
+      width: "100%",
       fontSize: 65,
       fontFamily: "serif",
       fontWeight: "bold",
