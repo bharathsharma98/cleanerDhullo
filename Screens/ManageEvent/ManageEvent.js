@@ -10,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 import { useDispatch } from "react-redux";
@@ -17,9 +18,21 @@ import { updateOldJob,addToQueue, refresh } from "../../Redux/Actions/CleanerAct
 import { Styles } from "./ManageEvent.styles";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { baseUrl } from "../../Variables/Variables";
+import * as ImagePicker from "expo-image-picker";
 export default function ManageEvent({ route, navigation }) {
   const { selectedData, myDate, myPhoto } = route.params;
   // console.log("SELECTED DATA", selectedData, myDate);
+   useEffect(() => {
+     (async () => {
+       if (Platform.OS !== "web") {
+         const { status } =
+           await ImagePicker.requestMediaLibraryPermissionsAsync();
+         if (status !== "granted") {
+           alert("Sorry, we need camera roll permissions to make this work!");
+         }
+       }
+     })();
+   }, []);
   const dispatch = useDispatch();
   const ReduxEvents = useSelector((state) => state.cleaner.dailyJobs);
   const [localPic, setLoaclPic] = useState("");
@@ -32,7 +45,7 @@ export default function ManageEvent({ route, navigation }) {
     message: selectedData.message,
     imageUrl: selectedData.imageUrl,
   });
-
+  const [image,setImage]= useState(null)
   const fetchImageFromLocal = async () => {
     const localPhoto = await AsyncStorage.getItem(`localPhoto${eventJob.id}`);
     await setLoaclPic(JSON.parse(localPhoto));
@@ -43,19 +56,35 @@ export default function ManageEvent({ route, navigation }) {
       });
     }
   };
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+      base64:true
+    });
 
-  useEffect(() => {
-    fetchImageFromLocal();
-  }, [myPhoto]);
+    console.log(result);
 
+    if (!result.cancelled) {
+      setEventJob({ ...eventJob, imageUrl: result });
+      setImage(result)
+    }
+  };
+  
+    useEffect(() => {
+      fetchImageFromLocal();
+    }, [myPhoto]);
   const updatJobOnline = async () => {
+    console.log(localPic, eventJob)
      dispatch(
        updateOldJob({
          date: myDate,
          job: {
            id: eventJob.id,
            carNotAvialiable: eventJob.carNotAvialiable,
-           imageUrl: localPic,
+           imageUrl: eventJob.imageUrl?.uri,
            interior: eventJob.interior,
            lightsOff: eventJob.lightsOff,
            message: eventJob.message,
@@ -89,7 +118,7 @@ export default function ManageEvent({ route, navigation }) {
                 job: {
                   id: eventJob.id,
                   carNotAvialiable: eventJob.carNotAvialiable,
-                  imageUrl: localPic,
+                  imageUrl: image,
                   interior: eventJob.interior,
                   lightsOff: eventJob.lightsOff,
                   message: eventJob.message,
@@ -104,7 +133,7 @@ export default function ManageEvent({ route, navigation }) {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                imgSource: localPic.base64,
+                imgSource: image.base64,
               }),
             })
               .then((res) => res.json())
@@ -144,7 +173,8 @@ export default function ManageEvent({ route, navigation }) {
                 job: {
                   id: eventJob.id,
                   carNotAvialiable: eventJob.carNotAvialiable || true,
-                  imageUrl: localPic,
+                  imageUrl:
+                     image,
                   interior: eventJob.interior,
                   lightsOff: eventJob.lightsOff,
                   message: eventJob.message,
@@ -159,7 +189,7 @@ export default function ManageEvent({ route, navigation }) {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                imgSource: localPic.base64,
+                imgSource: image.base64,
               }),
             })
               .then((res) => res.json())
@@ -177,7 +207,7 @@ export default function ManageEvent({ route, navigation }) {
             job: {
               id: eventJob.id,
               carNotAvialiable: eventJob.carNotAvialiable,
-              imageUrl: localPic,
+              imageUrl: image,
               interior: eventJob.interior,
               lightsOff: eventJob.lightsOff,
               message: eventJob.message,
@@ -269,7 +299,7 @@ export default function ManageEvent({ route, navigation }) {
                 }
                 style={Styles().checkbox}
               />
-              <Text>Car Not  Availiable</Text>
+              <Text>Car Not Availiable</Text>
             </View>
           )
         ) : (
@@ -332,14 +362,15 @@ export default function ManageEvent({ route, navigation }) {
               }}
             />
           </TouchableOpacity>
-
-          <Image
-            style={Styles().logo2}
-            source={{
-              uri: localPic?.uri,
-              //todo : see redux first then put localPic and clear async
-            }}
-          />
+          <TouchableOpacity onPress={pickImage}>
+            <Image
+              style={Styles().logo2}
+              source={{
+                uri: localPic?.uri || eventJob.imageUrl?.uri,
+                //todo : see redux first then put localPic and clear async
+              }}
+            />
+          </TouchableOpacity>
         </View>
         <View style={Styles().messageContainer}>
           <TextInput
